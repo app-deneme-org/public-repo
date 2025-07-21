@@ -14,4 +14,8 @@ jobs:
       - name: Clone the private repo
         run: |
           git clone https://$GITHUB_ACTOR:${{ secrets.DENEME_TOKEN }}@github.com/app-deneme-org/private-repo
+      - name: List contents of private repo
+        run: |
+          ls -la private-repo
+          cat private-repo/test.txt
 
