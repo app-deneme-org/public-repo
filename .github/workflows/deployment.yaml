@@ -1,0 +1,12 @@
+name: Deployment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.1
+      - name: Clone the private repo
+        run: |
+          git clone https://$GITHUB_ACTOR:${{ secrets.DENEME_TOKEN }}@github.com/app-deneme-org/private-repo
+
