@@ -11,7 +11,7 @@ INSTALLATION_ID = 76915481
 PRIVATE_KEY_PATH = "/home/ysufemrlty/Downloads/deneme-app-test-org.2025-07-21.private-key.pem"
 OWNER = "app-deneme-org"  # Organization name
 REPO = "public-repo"      # Secret yazılacak repo
-SECRET_NAME = "PYTHON_DENEME"
+SECRET_NAME = "PYTHON_TOKEN"
 
 # --- JWT oluştur ---
 with open(PRIVATE_KEY_PATH, "r") as key_file:
