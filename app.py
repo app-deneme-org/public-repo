@@ -3,9 +3,11 @@ import time
 import requests
 
 # --- Bilgiler ---
-APP_ID = 1642218  # GitHub App ID'nizi buraya yazın (integer)
-INSTALLATION_ID = 76915481  # Organizasyona kurulum ID'si (integer)
+APP_ID = 1642218
+INSTALLATION_ID = 76915481
 PRIVATE_KEY_PATH = "/home/ysufemrlty/Downloads/deneme-app-test-org.2025-07-21.private-key.pem"
+ORG_NAME = "app-deneme-org"
+SECRET_NAME = "PYTHON_DENEME"
 
 # --- JWT oluştur ---
 with open(PRIVATE_KEY_PATH, "r") as key_file:
@@ -13,21 +15,19 @@ with open(PRIVATE_KEY_PATH, "r") as key_file:
 
 now = int(time.time())
 payload = {
-    "iat": now,           # oluşturulma zamanı
-    "exp": now + (10 * 60),  # 10 dakika geçerli
-    "iss": APP_ID         # App ID
+    "iat": now,
+    "exp": now + (10 * 60),
+    "iss": APP_ID
 }
 
 jwt_token = jwt.encode(payload, private_key, algorithm="RS256")
 
-# --- Installation Access Token almak için API çağrısı ---
+# --- Installation Access Token al ---
 headers = {
     "Authorization": f"Bearer {jwt_token}",
     "Accept": "application/vnd.github+json"
 }
-
 url = f"https://api.github.com/app/installations/{INSTALLATION_ID}/access_tokens"
-
 response = requests.post(url, headers=headers)
 
 if response.status_code == 201:
@@ -37,3 +37,47 @@ if response.status_code == 201:
     print(f"Expires at: {expires_at}")
 else:
     print("Hata oluştu:", response.status_code, response.text)
+    exit()
+
+# --- Secret'ı oluştur veya güncelle ---
+# GitHub secret'ları base64 ile şifrelenmiş olarak saklanır
+# Bunun için önce public key alınmalı
+headers = {
+    "Authorization": f"token {token}",
+    "Accept": "application/vnd.github+json"
+}
+url = f"https://api.github.com/orgs/{ORG_NAME}/actions/secrets/public-key"
+res = requests.get(url, headers=headers)
+
+if res.status_code != 200:
+    print("Public key alınamadı:", res.status_code, res.text)
+    exit()
+
+import base64
+import nacl.encoding
+import nacl.public
+
+key_id = res.json()["key_id"]
+public_key = res.json()["key"]
+
+# Secret'ı şifrele
+def encrypt_secret(public_key: str, secret_value: str) -> str:
+    public_key_bytes = base64.b64decode(public_key)
+    sealed_box = nacl.public.SealedBox(nacl.public.PublicKey(public_key_bytes))
+    encrypted = sealed_box.encrypt(secret_value.encode("utf-8"))
+    return base64.b64encode(encrypted).decode("utf-8")
+
+encrypted_token = encrypt_secret(public_key, token)
+
+# Secret'ı GitHub'a gönder
+put_url = f"https://api.github.com/orgs/{ORG_NAME}/actions/secrets/{SECRET_NAME}"
+data = {
+    "encrypted_value": encrypted_token,
+    "key_id": key_id
+}
+put_res = requests.put(put_url, headers=headers, json=data)
+
+if put_res.status_code in [201, 204]:
+    print(f"✅ Secret '{SECRET_NAME}' başarıyla güncellendi.")
+else:
+    print("❌ Secret güncellenemedi:", put_res.status_code, put_res.text)
