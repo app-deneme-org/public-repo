@@ -8,7 +8,7 @@ Bu doküman, GitHub Actions içerisinde özel (private) bir repodan public bir r
 
 - Private bir GitHub reposuna, public bir repo içindeki GitHub Actions workflow'u ile erişim sağlamak.  
 - GitHub App kullanarak access token almak ve bu token'ı belirli aralıklarla otomatik olarak yenilemek.  
-  _(Alınan tokenlar 1 saat süreyle geçerli olduğu için 55 dakikada bir otomatik yenileme lazım.)_  
+  _(Alınan tokenlar 1 saat süreyle geçerli olduğu için ben 55 dakikada bir otomatik yenileme yaptım.)_  
 - Access token'ı public reponun secrets alanına otomatik olarak yazmak.
 
 ---
