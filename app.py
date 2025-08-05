@@ -1,12 +1,16 @@
 import jwt
 import time
 import requests
+import base64
+import nacl.encoding
+import nacl.public
 
 # --- Bilgiler ---
 APP_ID = 1642218
 INSTALLATION_ID = 76915481
 PRIVATE_KEY_PATH = "/home/ysufemrlty/Downloads/deneme-app-test-org.2025-07-21.private-key.pem"
-ORG_NAME = "app-deneme-org"
+OWNER = "app-deneme-org"  # Organization name
+REPO = "public-repo"      # Secret yazılacak repo
 SECRET_NAME = "PYTHON_DENEME"
 
 # --- JWT oluştur ---
@@ -39,28 +43,22 @@ else:
     print("Hata oluştu:", response.status_code, response.text)
     exit()
 
-# --- Secret'ı oluştur veya güncelle ---
-# GitHub secret'ları base64 ile şifrelenmiş olarak saklanır
-# Bunun için önce public key alınmalı
+# --- Public Key Al (Repo için) ---
 headers = {
     "Authorization": f"token {token}",
     "Accept": "application/vnd.github+json"
 }
-url = f"https://api.github.com/orgs/{ORG_NAME}/actions/secrets/public-key"
+url = f"https://api.github.com/repos/{OWNER}/{REPO}/actions/secrets/public-key"
 res = requests.get(url, headers=headers)
 
 if res.status_code != 200:
     print("Public key alınamadı:", res.status_code, res.text)
     exit()
 
-import base64
-import nacl.encoding
-import nacl.public
-
 key_id = res.json()["key_id"]
 public_key = res.json()["key"]
 
-# Secret'ı şifrele
+# --- Secret'ı şifrele ---
 def encrypt_secret(public_key: str, secret_value: str) -> str:
     public_key_bytes = base64.b64decode(public_key)
     sealed_box = nacl.public.SealedBox(nacl.public.PublicKey(public_key_bytes))
@@ -69,8 +67,8 @@ def encrypt_secret(public_key: str, secret_value: str) -> str:
 
 encrypted_token = encrypt_secret(public_key, token)
 
-# Secret'ı GitHub'a gönder
-put_url = f"https://api.github.com/orgs/{ORG_NAME}/actions/secrets/{SECRET_NAME}"
+# --- Secret'ı gönder (Repo'ya) ---
+put_url = f"https://api.github.com/repos/{OWNER}/{REPO}/actions/secrets/{SECRET_NAME}"
 data = {
     "encrypted_value": encrypted_token,
     "key_id": key_id
